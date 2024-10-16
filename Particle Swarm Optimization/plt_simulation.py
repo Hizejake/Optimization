@@ -90,7 +90,3 @@ ani = animation.FuncAnimation(fig, update, frames=num_iterations, init_func=init
 ani.save('pso_animation.mp4', writer='ffmpeg', fps=10)
 
 plt.show()
-
-
-
-
