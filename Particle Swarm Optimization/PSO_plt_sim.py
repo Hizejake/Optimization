@@ -1,8 +1,7 @@
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from PIL import Image
-from matplotlib.animation import FuncAnimation, ImageMagickWriter
 
 def rastrigin(X):
     if isinstance(X[0], (int, float)):
@@ -61,7 +60,7 @@ gamma = 0.9
 epsilon = 0.1
 
 # Run PSO
-global_best, swarm_positions = pso1(num_iterations, swarm_size, num_variables, x_min, x_max, alpha, beta, gamma, epsilon)
+best_solution, swarm_positions = pso1(num_iterations, swarm_size, num_variables, x_min, x_max, alpha, beta, gamma, epsilon)
 
 # Generate Rastrigin function values for the contour plot
 x = np.linspace(x_min, x_max, 400)
@@ -69,14 +68,14 @@ y = np.linspace(x_min, x_max, 400)
 X, Y = np.meshgrid(x, y)
 Z = 10 * num_variables + (X**2 - 10 * np.cos(2 * np.pi * X)) + (Y**2 - 10 * np.cos(2 * np.pi * Y))
 
-# Create contour plot
-fig, ax = plt.subplots(figsize=(10, 8))  # Set higher resolution
+# Create contour plot with increased resolution
+fig, ax = plt.subplots(figsize=(10, 8), dpi=100)
 contour = ax.contour(X, Y, Z, levels=50, cmap='viridis')
 fig.colorbar(contour)
 
-# Initialize particles
+# Initialize scatter plot for the particles
 particles, = ax.plot([], [], 'ro')
-generation_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
+generation_text = fig.text(0.5, 0.95, '', ha='center', fontsize=12, color='black')
 
 def init():
     particles.set_data([], [])
@@ -89,10 +88,9 @@ def update(frame):
     generation_text.set_text(f'Generation: {frame}')
     return particles, generation_text
 
-ani = FuncAnimation(fig, update, frames=num_iterations, init_func=init, blit=True, repeat=False)
+ani = animation.FuncAnimation(fig, update, frames=num_iterations, init_func=init, blit=False)
 
-# Save the animation as a video with higher resolution
-# ani.save('pso_animation.mp4', writer='ffmpeg', fps=10, dpi=200)
-ani.save('pso_animation.gif', writer=ImageMagickWriter(fps=10))
+# Save the animation as a GIF using PillowWriter
+ani.save('particle_swarm.gif', writer=animation.PillowWriter(fps=10))
 
 plt.show()
