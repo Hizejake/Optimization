@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from PIL import Image
+from matplotlib.animation import FuncAnimation, ImageMagickWriter
 
 def rastrigin(X):
     if isinstance(X[0], (int, float)):
@@ -26,8 +27,8 @@ def pso1(num_iterations, swarm_size, num_variables, x_min, x_max, alpha, beta, g
         swarm2 = swarm + epsilon * velocity
         swarm2 = np.clip(swarm2, x_min, x_max)
         
-        dicx = {tuple(swarm[i]): rastrigin([swarm[i]])[0] for i in range(swarm_size)}
-        dicy = {tuple(swarm2[i]): rastrigin([swarm2[i]])[0] for i in range(swarm_size)}
+        dicx = {tuple(swarm[i]): rastrigin(swarm)[i] for i in range(swarm_size)}
+        dicy = {tuple(swarm2[i]): rastrigin(swarm2)[i] for i in range(swarm_size)}
 
         if i == 0:
             local_best = swarm
@@ -39,7 +40,8 @@ def pso1(num_iterations, swarm_size, num_variables, x_min, x_max, alpha, beta, g
                 
                 local_best[j] = list(key2) if value2 < value1 else list(key1)
                 
-                global_best = list(min(dicy, key=dicy.get)) if min(dicy.values()) < min(dicx.values()) else list(min(dicx, key=dicx.get))
+                # global_best = list(min(dicy, key=dicy.get)) if min(dicy.values()) < min(dicx.values()) else list(min(dicx, key=dicx.get))
+                global_best = list(min(dicy, key=lambda k: dicy[k])) if np.argmin(dicy) < np.argmin(dicx) else list(min(dicx, key=lambda k: dicx[k]))
 
         velocity = (alpha * velocity + np.random.uniform(0, beta) * (np.array(local_best) - np.array(swarm)) + np.random.uniform(0, gamma) * (np.full_like(swarm, global_best) - np.array(swarm)))
         swarm = swarm2
@@ -48,7 +50,7 @@ def pso1(num_iterations, swarm_size, num_variables, x_min, x_max, alpha, beta, g
     return global_best, swarm_positions
 
 # Parameters
-num_iterations = 150
+num_iterations = 50
 swarm_size = 50
 num_variables = 2
 x_min = -5.12
@@ -68,25 +70,29 @@ X, Y = np.meshgrid(x, y)
 Z = 10 * num_variables + (X**2 - 10 * np.cos(2 * np.pi * X)) + (Y**2 - 10 * np.cos(2 * np.pi * Y))
 
 # Create contour plot
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(10, 8))  # Set higher resolution
 contour = ax.contour(X, Y, Z, levels=50, cmap='viridis')
 fig.colorbar(contour)
 
 # Initialize particles
 particles, = ax.plot([], [], 'ro')
+generation_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
 def init():
     particles.set_data([], [])
-    return particles,
+    generation_text.set_text('')
+    return particles, generation_text
 
 def update(frame):
     positions = swarm_positions[frame]
     particles.set_data([pos[0] for pos in positions], [pos[1] for pos in positions])
-    return particles,
+    generation_text.set_text(f'Generation: {frame}')
+    return particles, generation_text
 
-ani = animation.FuncAnimation(fig, update, frames=num_iterations, init_func=init, blit=True, repeat=False)
+ani = FuncAnimation(fig, update, frames=num_iterations, init_func=init, blit=True, repeat=False)
 
-# Save the animation as a video
-ani.save('pso_animation.mp4', writer='ffmpeg', fps=10)
+# Save the animation as a video with higher resolution
+# ani.save('pso_animation.mp4', writer='ffmpeg', fps=10, dpi=200)
+ani.save('pso_animation.gif', writer=ImageMagickWriter(fps=10))
 
 plt.show()
